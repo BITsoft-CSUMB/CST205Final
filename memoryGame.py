@@ -56,9 +56,10 @@ def play(): # the order is 1) setup program 2) setup main game loop 3) run main 
         continue
   
       gameBoard[pickA['y']][pickA['x']]['cardState'] = cardStates[1]      
+      gameBoard[pickA['y']][pickA['x']]['stateChanged'] = true
       showBoard(gameBoard)
       
-      # ?Does getSelection throw an error?
+      # ?Does getSelection throw an error? no but it would be nice for having the special quit case that's not a card
       try:
         pickB = getSelection(gameBoard, cardCount)
       except:
@@ -67,6 +68,7 @@ def play(): # the order is 1) setup program 2) setup main game loop 3) run main 
         continue
 
       gameBoard[pickB['y']][pickB['x']]['cardState'] = cardStates[1]
+      gameBoard[pickB['y']][pickB['x']]['stateChanged'] = true 
                 
       if pickA['uniqueID'] == pickB['uniqueID']:
         gameBoard[pickA['y']][pickA['x']]['cardState'] = cardStates[2]
@@ -74,6 +76,7 @@ def play(): # the order is 1) setup program 2) setup main game loop 3) run main 
         matches = matches + 1
         printNow("Match, way to go!")
       else:
+        
         gameBoard[pickA['y']][pickA['x']]['cardState'] = cardStates[0]
         gameBoard[pickB['y']][pickB['x']]['cardState'] = cardStates[0]
         printNow("No match.")
@@ -123,18 +126,26 @@ def fillBoard(gameBoard, maxMatches):
 
 # new and improved graphical game board!
 def showBoard(gameBoard):
-  repaint(gameScreen)
+  
   printNow("empty function show graphical board")  
+  size = len(gameBoard)
   for y in range(size):
     line = "\n"
     for x in range(size):
-      cardState = gameBoard[y][x]['cardState']  
-      if cardState == cardStates[0]: #----------Unselected card
-        line += "X "
+      cardState = gameBoard[y][x]['cardState']
+      stateChanged = gameBoard[y][x]['stateChanged']
+      if cardState == cardStates[0] and stateChanged: #----------Unselected card
+        # redraw the background on this tile
+        print("draw background tile") # need something just so it doesnt error
+        
       elif cardState == cardStates[1]: #-------Selected card
-        line += "Y "
+        # draw the regular card face on this tile
+        copyInto(cardImages[y * len(gameBoard) + x], gameScreen, 100 * x, 100 * y)
       else: #-----------------------------------Matched card
-        line += "Z "
+        # highlight this tile
+        print("highlight tile")
+      stateChanged = false # reset state changed flag
+  repaint(gameScreen)
   
 # old text based game board for debug
 def showBoardOld(gameBoard):
@@ -216,10 +227,6 @@ def makeMatchImages(deck):
   # For every card image, apply filter.
   #return [image0, image1, image2, ..., imageN]
 
-# add a number to the bottom center of an image so that the user knows how to select each card
-# image should be 100x100 pixels like all of the cards
-def addNumber(image):
-  return 0
   
 
 play()
