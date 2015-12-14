@@ -1,43 +1,40 @@
 import random
 import copy
 
-setMediaPath() # where are the pictures at??   
+#setMediaPath() # where are the pictures at??
 
 random.seed() # Initialize random number generator.
 cardStates = ['unselected', 'selected', 'matched']
 gameStates = {'quit': -2, 'lose': -1, 'playing': 0, 'win': 1}
 
 cardImages = []
-# pull regions from this background pic if we want to reset tiles etc 
+# Pull regions from this background pic if we want to reset tiles, etc.
 backgroundPic = makePicture(getMediaPath("Background.jpg"))
-#draw over this picture with new regions as the game progresses
+# Draw over this picture with new regions as the game progresses.
 gameScreen = makePicture(getMediaPath("Background.jpg")) 
 
-#   """
-#   JES (https://github.com/gatech-csl/jes) relies the "printNow" method instead
-#   of "print". When not in JES, "printNow" doesn't work. This method is here
-#   for use outside of the JES environment.
-#   """
-# Comment this method out if using JES.
-#def printNow(string):
-#   print string
 
-def play(): # the order is 1) setup program 2) setup main game loop 3) run main game loop
+def play():
   """
   Begin the memory card game.
+  The order is:
+    1) setup program
+    2) setup main game loop
+    3) run main game loop
   """
   global cardStates
   global cardImages
   global gameStates
-  global gameScreen # modified background as game progresses
-  global backgroundPic # original clean background
-  cardImages = loadDeck()
-  
-  boardSize = 4 # change to increase difficulty, maybe let them select
+  global gameScreen # background modified as game progresses
+  global backgroundPic # original, clean background
+  boardSize = 4
   cardCount = boardSize * boardSize
   maxMatches = cardCount / 2
   isQuit = False
+
+  cardImages = loadDeck()
   show(gameScreen)
+
   # Loop outside the active game, so player can replay, show final score, etc.
   while not isQuit: 
     # Setup game
@@ -46,8 +43,10 @@ def play(): # the order is 1) setup program 2) setup main game loop 3) run main 
     gameBoard = getNewGameBoard(boardSize)
     fillBoard(gameBoard, maxMatches)
     
-    while gameState == gameStates['playing']: # this is the actual active game loop
+    # Actual, active game loop
+    while gameState == gameStates['playing']:
       showBoard(gameBoard)
+
       try:
         pickA = getSelection(gameBoard, cardCount)
       except:
@@ -59,7 +58,11 @@ def play(): # the order is 1) setup program 2) setup main game loop 3) run main 
       gameBoard[pickA['y']][pickA['x']]['stateChanged'] = true
       showBoard(gameBoard)
       
-      # ?Does getSelection throw an error? no but it would be nice for having the special quit case that's not a card
+      # ?Does getSelection throw an error?
+      # no but it would be nice for having the special quit case that's not a
+      # card
+      # We should either intentionally throw an error/exception with "raise"
+      # or check for the type returned. Right now this doesn't appear to work.
       try:
         pickB = getSelection(gameBoard, cardCount)
       except:
@@ -91,8 +94,16 @@ def getNewGameBoard(boardSize):
   """
   """
   global cardStates
-  gameCard = {'uniqueID': -1, 'x': -1, 'y': -1, 'cardState': cardStates[0], 'stateChanged': false, 'image': makeEmptyPicture(100,100)}
-  return [[copy.copy(gameCard) for x in range(boardSize)] for x in range(boardSize)]
+  gameCard = {
+      'uniqueID': -1,
+      'x': -1,
+      'y': -1,
+      'cardState': cardStates[0],
+      'stateChanged': false,
+      'image': makeEmptyPicture(100,100)
+  }
+  row = [copy.copy(gameCard) for x in range(boardSize)]
+  return [row for x in range(boardSize)]
 
 
 def fillBoard(gameBoard, maxMatches):
@@ -118,7 +129,8 @@ def fillBoard(gameBoard, maxMatches):
           gameBoard[y][x]['uniqueID'] = proposedValue
           try:
             gameBoard[y][x]['image'] = cardImages[proposedValue]
-          except:  # if we don't have enough images just use some trees don't trip
+          except:
+            # If we don't have enough images, just use some trees. Don't trip.
             gameBoard[y][x]['image'] = cardImages[0]
   # TODO: Remove the displayed game cards. This is for testing purposes.
   #printNow(gameBoard)
@@ -126,7 +138,9 @@ def fillBoard(gameBoard, maxMatches):
 
 # new and improved graphical game board!
 def showBoard(gameBoard):
-  
+  """
+  Show the game board based on the state of each card.
+  """
   printNow("empty function show graphical board")  
   size = len(gameBoard)
   for y in range(size):
@@ -134,37 +148,41 @@ def showBoard(gameBoard):
     for x in range(size):
       cardState = gameBoard[y][x]['cardState']
       stateChanged = gameBoard[y][x]['stateChanged']
-      if cardState == cardStates[0] and stateChanged: #----------Unselected card
-        # redraw the background on this tile
+      if cardState == cardStates[0] and stateChanged:
+        # --Unselected card--
+        # Redraw the background on this tile.
         print("draw background tile") # need something just so it doesnt error
-        
-      elif cardState == cardStates[1]: #-------Selected card
-        # draw the regular card face on this tile
-        copyInto(cardImages[y * len(gameBoard) + x], gameScreen, 100 * x, 100 * y)
-      else: #-----------------------------------Matched card
-        # highlight this tile
+      elif cardState == cardStates[1]:
+        # --Selected card--
+        # Draw the regular card face on this tile.
+        cardImage = cardImages[y * len(gameBoard) + x]
+        copyInto(cardImage, gameScreen, 100 * x, 100 * y)
+      else:
+        # --Matched card--
+        # Highlight this tile.
         print("highlight tile")
-      stateChanged = false # reset state changed flag
+      stateChanged = False # reset state changed flag
   repaint(gameScreen)
+
+
+# # Old text based game board still here for debugging purposes.
+# def showBoardOld(gameBoard):
+#   """
+#   Show the game board based on the state of each card.
+#   """
+#   size = len(gameBoard)
   
-# old text based game board for debug
-def showBoardOld(gameBoard):
-  """
-  Show the game board based on the state of each card.
-  """
-  size = len(gameBoard)
-  
-  for y in range(size):
-    line = "\n"
-    for x in range(size):
-      cardState = gameBoard[y][x]['cardState']  
-      if cardState == cardStates[0]: #----------Unselected card
-        line += "X "
-      elif cardState == cardStates[1]: #-------Selected card
-        line += "Y "
-      else: #-----------------------------------Matched card
-        line += "Z "
-    printNow(line)
+#   for y in range(size):
+#     line = "\n"
+#     for x in range(size):
+#       cardState = gameBoard[y][x]['cardState']
+#       if cardState == cardStates[0]: #----------Unselected card
+#         line += "X "
+#       elif cardState == cardStates[1]: #-------Selected card
+#         line += "Y "
+#       else: #-----------------------------------Matched card
+#         line += "Z "
+#     printNow(line)
 
 
 def getSelection(gameBoard, cardCount):
@@ -173,8 +191,11 @@ def getSelection(gameBoard, cardCount):
   Parameters: gameBoard -> The game board (array).
               cardCount -> The total number of cards that can be selected
                            from (int).
-  Returns: Selected card if the user selects something valid, or a game state if they use a command to quit
-           Use exception handling to catch the quit case when they don't select a card
+  Returns: Selected card if the user selects something valid, or a game state
+           if they use a command to quit.
+  Throws: TODO: raise exception
+          Use exception handling to catch the quit case when they don't select
+          a card.
   """
   global gameStates
   while True:
@@ -206,11 +227,14 @@ def getSelection(gameBoard, cardCount):
 
 def loadDeck():
   """
-  Load the deck of cards and return an array that represents the cards.
-  The card image files should go from 0.jpg to n.jpg with 0 being the default
-  If we do this it is easy to match uniqueID for the game board tiles with images
-  This deck array will store all of the unmodified original images, then we can
-  Modify the images for each tile independently after copying from the deck.
+  Load the deck of cards and return an array that represents the cards. The
+  card image files should go from 0.jpg to n.jpg, with 0 being the default.
+  This makes it easy to match "uniqueID" for the game board tiles with images.
+  This deck array will store all of the unmodified original images. Then, we
+  can modify the images for each tile independently after copying from the
+  deck.
+  Parameters: (none)
+  Returns: Array that represents the cards.
   """
   # find all images in the /cardImages directory
   images = []
@@ -218,6 +242,7 @@ def loadDeck():
     if file.endswith(".jpg") and file is not "background.jpg":
       images.append(makePicture(file))
   return images # list of card images to use for the game
+
 
 def makeMatchImages(deck):
   """
@@ -227,6 +252,5 @@ def makeMatchImages(deck):
   # For every card image, apply filter.
   #return [image0, image1, image2, ..., imageN]
 
-  
 
 play()
