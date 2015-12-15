@@ -101,7 +101,7 @@ def playGame():
     printNow(
       str(matches) + " correct and " + str(incorrectMatches) + 
       " incorrect matches total.")
-    if (matches/(matches+incorrectMatches) > gameStates['win']):
+    if matches / max((matches + incorrectMatches), 1) > gameStates['win']:
       gameStates['win'] = matches/(matches+incorrectMatches)
       printNow("Congratulations - new high score (" + str(gameStates['win']) + ")")
     isQuit = True 
