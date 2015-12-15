@@ -177,8 +177,7 @@ def getSelection(gameBoard, cardCount):
                            from (int).
   Returns: Selected card if the user selects something valid, or a game state
            if they use a command to quit.
-  Throws: TODO: raise exception
-          Use exception handling to catch the quit case when they don't select
+  Throws: Use exception handling to catch the quit case when they don't select
           a card.
   """
   global gameStates
