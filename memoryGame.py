@@ -1,17 +1,27 @@
-import random
-import copy
+"""
+Final Project - Memory Game
+CST 205 Multimedia Design and Programming
 
-#setMediaPath() # where are the pictures at??
+Team #6
+Matthew Valancy (Crenshaw)
+Ashley Wallace
+Brittany Mazza
+John Lester
+"""
+import random # it's not a game if it's always the same
+import copy # who needs class(es) when you've got lists to copy
+import time # sleep between pic flashes
 
-random.seed() # Initialize random number generator.
+setMediaPath() # where are the pictures at??
+
 cardStates = ['unselected', 'selected', 'matched']
-gameStates = {'quit': -2, 'lose': -1, 'playing': 0, 'win': 1}
-
+gameStates = {'quit': -2, 'lose': -1, 'playing': 0, 'win': 1, 'topScore':0}
 cardImages = []
-# Pull regions from this background pic if we want to reset tiles, etc.
+# Restore this picture to have a clean board
 backgroundPic = makePicture(getMediaPath("Background.jpg"))
 # Draw over this picture with new regions as the game progresses.
-gameScreen = makePicture(getMediaPath("Background.jpg")) 
+gameScreen = makePicture(getMediaPath("Background.jpg"))
+random.seed() # Initialize random number generator.
 
 
 def play():
@@ -31,67 +41,69 @@ def play():
   cardCount = boardSize * boardSize
   maxMatches = cardCount / 2
   isQuit = False
-
-  cardImages = loadDeck()
+  # Don't use show from now on, just redraw gameScreen.
   show(gameScreen)
-
-  # Loop outside the active game, so player can replay, show final score, etc.
-  while not isQuit: 
+  # Loop outside the active game, so pl+ayer can replay, show final score, etc.
+  while not isQuit:
+    cardImages = loadDeck()
+    printHelpMsg()
     # Setup game
     matches = 0 # number of successful matches
+    incorrectMatches = 0 # number of incorrect matches
     gameState = gameStates['playing']
     gameBoard = getNewGameBoard(boardSize)
     fillBoard(gameBoard, maxMatches)
     
     # Actual, active game loop
     while gameState == gameStates['playing']:
+      # Get guess #1.
       showBoard(gameBoard)
-
       try:
         pickA = getSelection(gameBoard, cardCount)
+        pickA['cardState'] = cardStates[1]      
       except:
         if pickA == gameStates['quit']:
           gameState = gameStates['lose']
         continue
-  
-      gameBoard[pickA['y']][pickA['x']]['cardState'] = cardStates[1]      
-      gameBoard[pickA['y']][pickA['x']]['stateChanged'] = true
+      # Get guess #2.
       showBoard(gameBoard)
-      
-      # ?Does getSelection throw an error?
-      # no but it would be nice for having the special quit case that's not a
-      # card
-      # We should either intentionally throw an error/exception with "raise"
-      # or check for the type returned. Right now this doesn't appear to work.
       try:
         pickB = getSelection(gameBoard, cardCount)
+        pickB['cardState'] = cardStates[1]
       except:
         if pickB == gameStates['quit']:
           gameState = gameStates['lose']
         continue
-
-      gameBoard[pickB['y']][pickB['x']]['cardState'] = cardStates[1]
-      gameBoard[pickB['y']][pickB['x']]['stateChanged'] = true 
-                
+      # Display current game.
+      showBoard(gameBoard)
+      time.sleep(1)
       if pickA['uniqueID'] == pickB['uniqueID']:
-        gameBoard[pickA['y']][pickA['x']]['cardState'] = cardStates[2]
-        gameBoard[pickB['y']][pickB['x']]['cardState'] = cardStates[2]
-        matches = matches + 1
+        pickA['cardState'] = cardStates[2]
+        pickB['cardState'] = cardStates[2]
+        matches += 1
+        applyTint(pickA['image'])
         printNow("Match, way to go!")
       else:
-        
-        gameBoard[pickA['y']][pickA['x']]['cardState'] = cardStates[0]
-        gameBoard[pickB['y']][pickB['x']]['cardState'] = cardStates[0]
+        pickA['cardState'] = cardStates[0]
+        pickB['cardState'] = cardStates[0]
+        incorrectMatches += 1
         printNow("No match.")
-        
+      # Let the user know when they've matched all of the cards.
       if matches == maxMatches:
         printNow("All cards matched!")
         gameState = gameStates['win']
+        time.sleep(5)
+    printNow(
+      str(matches) + " correct and " + str(incorrectMatches) + 
+      " incorrect matches total.")
+    if (matches/(matches+incorrectMatches) > gameStates['win']):
+        gameStates['win'] = matches/(matches+incorrectMatches)
     isQuit = True 
 
 
 def getNewGameBoard(boardSize):
   """
+  Create a new game board with new cards.
   """
   global cardStates
   gameCard = {
@@ -99,11 +111,9 @@ def getNewGameBoard(boardSize):
       'x': -1,
       'y': -1,
       'cardState': cardStates[0],
-      'stateChanged': false,
       'image': makeEmptyPicture(100,100)
   }
-  row = [copy.copy(gameCard) for x in range(boardSize)]
-  return [row for x in range(boardSize)]
+  return [[copy.copy(gameCard) for x in range(boardSize)] for y in range(boardSize)]
 
 
 def fillBoard(gameBoard, maxMatches):
@@ -132,59 +142,31 @@ def fillBoard(gameBoard, maxMatches):
           except:
             # If we don't have enough images, just use some trees. Don't trip.
             gameBoard[y][x]['image'] = cardImages[0]
-  # TODO: Remove the displayed game cards. This is for testing purposes.
-  #printNow(gameBoard)
 
 
-# new and improved graphical game board!
 def showBoard(gameBoard):
   """
   Show the game board based on the state of each card.
   """
-  printNow("empty function show graphical board")  
+  copyInto(backgroundPic, gameScreen, 0, 0) # nothing like a fresh start
   size = len(gameBoard)
   for y in range(size):
     line = "\n"
     for x in range(size):
       cardState = gameBoard[y][x]['cardState']
-      stateChanged = gameBoard[y][x]['stateChanged']
-      if cardState == cardStates[0] and stateChanged:
-        # --Unselected card--
-        # Redraw the background on this tile.
-        print("draw background tile") # need something just so it doesnt error
-      elif cardState == cardStates[1]:
-        # --Selected card--
-        # Draw the regular card face on this tile.
-        cardImage = cardImages[y * len(gameBoard) + x]
-        copyInto(cardImage, gameScreen, 100 * x, 100 * y)
-      else:
+      if cardState == cardStates[2]:
         # --Matched card--
         # Highlight this tile.
-        print("highlight tile")
-      stateChanged = False # reset state changed flag
+        cardImage = gameBoard[y][x]['image']
+        copyInto(cardImage, gameScreen, 100 * x, 100 * y)
+      if cardState == cardStates[1]:
+        # --Selected card--
+        # Draw the regular card face on this tile.
+        cardImage = gameBoard[y][x]['image']
+        copyInto(cardImage, gameScreen, 100 * x, 100 * y)
   repaint(gameScreen)
 
-
-# # Old text based game board still here for debugging purposes.
-# def showBoardOld(gameBoard):
-#   """
-#   Show the game board based on the state of each card.
-#   """
-#   size = len(gameBoard)
   
-#   for y in range(size):
-#     line = "\n"
-#     for x in range(size):
-#       cardState = gameBoard[y][x]['cardState']
-#       if cardState == cardStates[0]: #----------Unselected card
-#         line += "X "
-#       elif cardState == cardStates[1]: #-------Selected card
-#         line += "Y "
-#       else: #-----------------------------------Matched card
-#         line += "Z "
-#     printNow(line)
-
-
 def getSelection(gameBoard, cardCount):
   """
   Let the user select a valid game tile.
@@ -201,14 +183,14 @@ def getSelection(gameBoard, cardCount):
   while True:
     # Reset the user's card selection to -1, which is an invlid card entry.
     value = -1
-    input = raw_input("Please select a card (0, 1, 2, 3, etc...): ")
+    input = raw_input("Please select a card (1, 2, 3, etc...): ")
     # Exit case.
     if input == "q" or input == "quit":
       return gameStates['quit']
     # User must redo their card selection if their entered value can't be cast
     # to an integer.
     try:
-      value = int(input)
+      value = int(input) - 1
     except ValueError:
       printNow("Invalid input, please try again.")
       continue
@@ -236,7 +218,7 @@ def loadDeck():
   Parameters: (none)
   Returns: Array that represents the cards.
   """
-  # find all images in the /cardImages directory
+  # Find all images in the /cardImages directory.
   images = []
   for file in os.listdir(getMediaPath()):
     if file.endswith(".jpg") and file is not "background.jpg":
@@ -244,13 +226,33 @@ def loadDeck():
   return images # list of card images to use for the game
 
 
-def makeMatchImages(deck):
+def applyTint(image):
   """
-  Pre-generate images for matched cards (green filter, whatever) so we dont
-  lag while playing maybe save the too for re-use?
+  Apply tint to show which images are already matched.
   """
-  # For every card image, apply filter.
-  #return [image0, image1, image2, ..., imageN]
+  pixels = getPixels(image)
+  for p in pixels:
+    g = getGreen(p)
+    r = getRed(p)
+    b = getBlue(p)
+    setGreen(p,(g+r+b)/3)
+    setRed(p,(g+r+b)/3)
+    setBlue(p,(g+r+b)/3)
+    makeDarker(getColor(p))
+
+
+def printHelpMsg():
+  """
+  Display the welcome and help message.
+  Parameters: (none)
+  Returns: N/A
+  """
+  printNow(
+    "Welcome to Memory Cards!\n" +
+    "Cards are numbered 1 - 16. Type the number of the card you would like\n" +
+    "to select. When you find a matching pair they will remain on the\n" +
+    "board. Type 'help' to repeat this message and 'quit' to exit the game.\n" +
+    "To start the game again once you have finished type 'play()'\n")
 
 
 play()
