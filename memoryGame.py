@@ -23,8 +23,7 @@ backgroundPic = makePicture(getMediaPath("Background.jpg"))
 gameScreen = makePicture(getMediaPath("Background.jpg"))
 random.seed() # Initialize random number generator.
 
-
-def play():
+def playGame():
   """
   Begin the memory card game.
   The order is:
@@ -41,6 +40,8 @@ def play():
   cardCount = boardSize * boardSize
   maxMatches = cardCount / 2
   isQuit = False
+  pickSound = makeSound(getMediaPath("card-flip.wav"))
+  matchSound = makeSound(getMediaPath("winner.wav"))
   # Don't use show from now on, just redraw gameScreen.
   show(gameScreen)
   # Loop outside the active game, so pl+ayer can replay, show final score, etc.
@@ -60,7 +61,8 @@ def play():
       showBoard(gameBoard)
       try:
         pickA = getSelection(gameBoard, cardCount)
-        pickA['cardState'] = cardStates[1]      
+        pickA['cardState'] = cardStates[1]
+        play(pickSound)
       except:
         if pickA == gameStates['quit']:
           gameState = gameStates['lose']
@@ -70,6 +72,7 @@ def play():
       try:
         pickB = getSelection(gameBoard, cardCount)
         pickB['cardState'] = cardStates[1]
+        play(pickSound)
       except:
         if pickB == gameStates['quit']:
           gameState = gameStates['lose']
@@ -83,6 +86,7 @@ def play():
         matches += 1
         applyTint(pickA['image'])
         printNow("Match, way to go!")
+        play(pickSound)
       else:
         pickA['cardState'] = cardStates[0]
         pickB['cardState'] = cardStates[0]
@@ -92,14 +96,15 @@ def play():
       if matches == maxMatches:
         printNow("All cards matched!")
         gameState = gameStates['win']
+        play(matchSound)
         time.sleep(5)
     printNow(
       str(matches) + " correct and " + str(incorrectMatches) + 
       " incorrect matches total.")
     if (matches/(matches+incorrectMatches) > gameStates['win']):
-        gameStates['win'] = matches/(matches+incorrectMatches)
+      gameStates['win'] = matches/(matches+incorrectMatches)
+      printNow("Congratulations - new high score (" + str(gameStates['win']) + ")")
     isQuit = True 
-
 
 def getNewGameBoard(boardSize):
   """
@@ -114,7 +119,6 @@ def getNewGameBoard(boardSize):
       'image': makeEmptyPicture(100,100)
   }
   return [[copy.copy(gameCard) for x in range(boardSize)] for y in range(boardSize)]
-
 
 def fillBoard(gameBoard, maxMatches):
   """
@@ -143,7 +147,6 @@ def fillBoard(gameBoard, maxMatches):
             # If we don't have enough images, just use some trees. Don't trip.
             gameBoard[y][x]['image'] = cardImages[0]
 
-
 def showBoard(gameBoard):
   """
   Show the game board based on the state of each card.
@@ -165,7 +168,6 @@ def showBoard(gameBoard):
         cardImage = gameBoard[y][x]['image']
         copyInto(cardImage, gameScreen, 100 * x, 100 * y)
   repaint(gameScreen)
-
   
 def getSelection(gameBoard, cardCount):
   """
@@ -206,7 +208,6 @@ def getSelection(gameBoard, cardCount):
     else:
       printNow("This card is already in use...")
 
-
 def loadDeck():
   """
   Load the deck of cards and return an array that represents the cards. The
@@ -221,10 +222,9 @@ def loadDeck():
   # Find all images in the /cardImages directory.
   images = []
   for file in os.listdir(getMediaPath()):
-    if file.endswith(".jpg") and file is not "background.jpg":
+    if file.endswith("-bsmg.jpg") and file is not "background.jpg":
       images.append(makePicture(file))
   return images # list of card images to use for the game
-
 
 def applyTint(image):
   """
@@ -240,7 +240,6 @@ def applyTint(image):
     setBlue(p,(g+r+b)/3)
     makeDarker(getColor(p))
 
-
 def printHelpMsg():
   """
   Display the welcome and help message.
@@ -252,7 +251,6 @@ def printHelpMsg():
     "Cards are numbered 1 - 16. Type the number of the card you would like\n" +
     "to select. When you find a matching pair they will remain on the\n" +
     "board. Type 'help' to repeat this message and 'quit' to exit the game.\n" +
-    "To start the game again once you have finished type 'play()'\n")
+    "To start the game again once you have finished type 'playGame()'\n")
 
-
-play()
+playGame()
