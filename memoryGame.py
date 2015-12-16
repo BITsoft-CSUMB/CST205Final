@@ -91,7 +91,8 @@ def playGame():
         pickA['cardState'] = cardStates[0]
         pickB['cardState'] = cardStates[0]
         incorrectMatches += 1
-        printNow("No match.")
+        printNow("No match. You have made " + str(incorrectMatches) 
+        + " incorrect guesses so far.")
       # Let the user know when they've matched all of the cards.
       if matches == maxMatches:
         printNow("All cards matched!")
@@ -190,6 +191,9 @@ def getSelection(gameBoard, cardCount):
       return gameStates['quit']
     # User must redo their card selection if their entered value can't be cast
     # to an integer.
+    if input == "h" or input == "help":
+      printHelpMsg()
+      return gameStates['playing']
     try:
       value = int(input) - 1
     except ValueError:
@@ -246,10 +250,15 @@ def printHelpMsg():
   Returns: N/A
   """
   printNow(
+    "------------------------------------------------------------------------\n" +
     "Welcome to Memory Cards!\n" +
+    "------------------------------------------------------------------------\n\n" +
+    "------------------------------------------------------------------------\n" +
+    "Directions: \n" +
     "Cards are numbered 1 - 16. Type the number of the card you would like\n" +
     "to select. When you find a matching pair they will remain on the\n" +
     "board. Type 'help' to repeat this message and 'quit' to exit the game.\n" +
-    "To start the game again once you have finished type 'playGame()'\n")
+    "To start the game again once you have finished type 'playGame()'\n" +
+    "------------------------------------------------------------------------\n")
 
 playGame()
