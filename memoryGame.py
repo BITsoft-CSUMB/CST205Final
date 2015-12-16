@@ -2,7 +2,7 @@
 Final Project - Memory Game
 CST 205 Multimedia Design and Programming
 
-Team #6
+BITsoft (Team 6)
 Matthew Valancy (Crenshaw)
 Ashley Wallace
 Brittany Mazza
@@ -15,7 +15,7 @@ import time # sleep between pic flashes
 setMediaPath() # where are the pictures at??
 
 cardStates = ['unselected', 'selected', 'matched']
-gameStates = {'quit': -2, 'lose': -1, 'playing': 0, 'win': 1, 'topScore':0}
+gameStates = {'quit': -2, 'lose': -1, 'playing': 0, 'win': 1, 'topScore':0.0}
 cardImages = []
 # Restore this picture to have a clean board
 backgroundPic = makePicture(getMediaPath("Background.jpg"))
@@ -101,9 +101,9 @@ def playGame():
     printNow(
       str(matches) + " correct and " + str(incorrectMatches) + 
       " incorrect matches total.")
-    if (matches/(matches+incorrectMatches) > gameStates['win']):
-      gameStates['win'] = matches/(matches+incorrectMatches)
-      printNow("Congratulations - new high score (" + str(gameStates['win']) + ")")
+    if (matches / (matches + incorrectMatches) > gameStates['topScore']):
+      gameStates['topScore'] = matches / (matches + incorrectMatches)
+      printNow("Congratulations - new high score (" + str(gameStates['topScore']) + ")")
     isQuit = True 
 
 def getNewGameBoard(boardSize):
